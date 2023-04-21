@@ -35,26 +35,16 @@ const main = (params) => {
         var combinedMeasure = leftMeasure[i] + rightMeasure[i];  // centered at 0
         var offsetToCenter = +leftMeasure[i] * .5 - rightMeasure[i] * 0.5; // -((a+b)/2)+a
 
-        // var c = cuboid({
-        //     size: [combinedMeasure, perItemLength, heightMM]
-        // });
-        var c = roundedCuboid({
-            size: [
-                combinedMeasure + (extraRoundness * 2),
-                perItemLength + (extraRoundness * 2),
-                heightMM + (extraRoundness * 2)
-            ],
-            roundRadius: extraRoundness,
-            segments: 32
+        var c = cuboid({
+            size: [combinedMeasure, perItemLength, heightMM]
         });
 
         var translated = translate([offsetToCenter, perItemLength * i, 0], c);
         shapes.push(translated);
     }
 
-    var c = hullChain(shapes);
-    // return expand({ delta: extraRoundness, corners: 'round', segments:32},c); 
-    return c;
+    var h = hullChain(shapes);
+    return expand({ delta: extraRoundness, corners: 'round', segments: 32 }, h);
 }
 
 module.exports = { main }
