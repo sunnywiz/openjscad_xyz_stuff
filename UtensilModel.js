@@ -38,13 +38,18 @@ const main = (params) => {
         var c = cuboid({
             size: [combinedMeasure, perItemLength, heightMM]
         });
+        // we're going to get it center-x on 0, z resting on zero, y resting on 0 
+        var ct = translate([offsetToCenter, 0, heightMM/2], c); 
+        // we need to give it a hat to take away from
+        var hat = cuboid({size:[combinedMeasure+2*extraRoundness,perItemLength, extraRoundness]})
+        return [ct,hat]; 
 
         var translated = translate([offsetToCenter, perItemLength * i, 0], c);
         shapes.push(translated);
     }
 
-    var h = hullChain(shapes);
-    return expand({ delta: extraRoundness, corners: 'round', segments: 32 }, h);
+    var h= hullChain(shapes); 
+    return expand({ delta: extraRoundness, corners: 'round', segments:32},h); 
 }
 
 module.exports = { main }
