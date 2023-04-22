@@ -5,7 +5,7 @@
 
 const jscad = require('@jscad/modeling')
 const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
-const { translate,rotate } = jscad.transforms
+const { translate, rotate } = jscad.transforms
 const { expand } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
 const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
@@ -14,9 +14,9 @@ const { TAU } = require('@jscad/modeling').maths.constants
 
 
 // Returns X-centered, Y-going away, and Z-resting on 0
-const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => { 
+const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
-    if (!rightMeasure) rightMeasure=leftMeasure;  
+    if (!rightMeasure) rightMeasure = leftMeasure;
     if (leftMeasure.length != rightMeasure.length) throw ("need same # of measurements");
 
     var shapes = [];
@@ -39,52 +39,55 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
             size: [combinedMeasure, perItemLength, heightMM]
         });
 
-        var translated = translate([offsetToCenter, perItemLength * i + (perItemLength/2), heightMM/2], c);
+        var translated = translate([offsetToCenter, perItemLength * i + (perItemLength / 2), heightMM / 2], c);
         shapes.push(translated);
     }
 
     var h = hullChain(shapes);
-    return h; 
+    return h;
 }
 
 const main = (params) => {
 
-    var width = 110; 
+    var width = 110;
     var height = 50;
     var bottom = 5;
-    var rim = 5; 
-    var roundness=5; 
-    var depth = 200 + rim*2 +roundness*2; 
-    
-    var h1 = height-roundness-bottom;  
-    
-    var spoon = solidByLengths(200,h1,[8, 10, 8, 6, 5,5,5,5, 10, 15, 10, 5]); 
-    var fork=  solidByLengths(200,h1,[8, 10, 8, 6, 5,5,5,5, 10, 15, 15, 15]); 
-    
+    var rim = 5;
+    var roundness = 5;
+    var depth = 260 + rim * 2 + roundness * 2;
+
+    var h1 = height - roundness - bottom;
+
+    var knife = solidByLengths(260,h1,
+        [1,15,16,13,12,11,10,9,8,7,7,10,12,13,13,14,14,13,12,12,11,10, 7],
+        [1, 7, 9, 7, 6, 6, 5,5,5,5,6,12,14,15,15,15,15,15,15,15,15,15,15],)
+    var fork = solidByLengths(220, h1, 
+        [1,10,13,11,10,8,6,5,5,5,5,5,5,5,8,14,15,15,15,14,13,12]);
+
     // make them rounder
-    var e = { delta:roundness, corners:'round',segments:16};
-    spoon = expand(e,spoon); 
-    fork = expand(e,fork); 
-    
+    var e = { delta: roundness, corners: 'round', segments: 16 };
+    knife = expand(e, knife);
+    fork = expand(e, fork);
+
     // position
-    spoon = translate([30,rim+roundness,bottom+roundness],spoon); 
-    fork = translate([80,rim+roundness,bottom+roundness],fork); 
-    
+    knife = translate([25, rim + roundness, bottom + roundness], knife);
+    fork = translate([80, rim + roundness, bottom + roundness], fork);
+
     // base 
-    var base = cuboid({size:[width,depth,height]}); 
-    base = translate([width/2,depth/2,height/2], base);
-    
+    var base = cuboid({ size: [width, depth, height] });
+    base = translate([width / 2, depth / 2, height / 2], base);
+
     // grabber
-    var grab = cylinder({ radius: height-bottom-rim, height: width+rim*2, segments:64 });
-    grab = rotate([0,TAU / 4, 0],grab)
-    grab = translate([width/2,depth/2,height],grab);
-    
-    base = subtract(base, spoon); 
+    var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
+    grab = rotate([0, TAU / 4, 0], grab)
+    grab = translate([width / 2, depth / 2, height], grab);
+
+    base = subtract(base, knife);
     base = subtract(base, fork);
-    base = subtract(base, grab); 
-    base = colorize([1,0,0,0.5],base);
-    
-    return [base]; 
+    base = subtract(base, grab);
+    base = colorize([1, 0, 0, 0.5], base);
+
+    return [base];
 
 }
 
