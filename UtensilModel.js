@@ -8,9 +8,15 @@ const { cuboid, sphere, roundedCuboid } = jscad.primitives
 const { translate } = jscad.transforms
 const { expand } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
+const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
+const { union, subtract, intersect } = jscad.booleans
 
-const utensil = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
+
+// Returns X-centered, Y-going away, and Z-resting on 0
+const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
+
+    if (!rightMeasure) rightMeasure = leftMeasure;
     if (leftMeasure.length != rightMeasure.length) throw ("need same # of measurements");
 
     var shapes = [];
@@ -33,7 +39,7 @@ const utensil = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
             size: [combinedMeasure, perItemLength, heightMM]
         });
 
-        var translated = translate([offsetToCenter, perItemLength * i, 0], c);
+        var translated = translate([offsetToCenter, perItemLength * i + (perItemLength / 2), heightMM / 2], c);
         shapes.push(translated);
     }
 
@@ -43,14 +49,36 @@ const utensil = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
 const main = (params) => {
 
-    var heightMM = 50;
-    var fork1 = utensil(
-        200, heightMM, [10, 10, 10, 10, 10, 20, 25, 20, 5]
-        , [10, 10, 10, 10, 10, 20, 25, 20, 5]);
-    return fork1;
-    //     var extraRoundness = 5;
+    var width = 110;
+    var height = 50;
+    var bottom = 5;
+    var rim = 5;
+    var roundness = 5;
+    var depth = 200 + rim * 2 + roundness * 2;
 
-    //     return expand({ delta: extraRoundness, corners: 'round', segments: 32 }, h);
+    var h1 = height - roundness - bottom;
+
+    var spoon = solidByLengths(200, h1, [8, 10, 8, 6, 5, 5, 5, 5, 10, 15, 10, 5]);
+    var fork = solidByLengths(200, h1, [8, 10, 8, 6, 5, 5, 5, 5, 10, 15, 15, 15]);
+
+    // make them rounder
+    var e = { delta: roundness, corners: 'round', segments: 16 };
+    spoon = expand(e, spoon);
+    fork = expand(e, fork);
+
+    // position
+    spoon = translate([30, rim + roundness, bottom + roundness], spoon);
+    fork = translate([80, rim + roundness, bottom + roundness], fork);
+
+    // base 
+    var base = cuboid({ size: [width, depth, height] });
+    base = translate([width / 2, depth / 2, height / 2], base);
+
+    base = colorize([1, 0, 0, 0.5], base);
+    base = subtract(base, spoon);
+    base = subtract(base, fork);
+
+    return [base];
 
 }
 
