@@ -9,13 +9,7 @@ const { translate } = jscad.transforms
 const { expand } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
 
-const main = (params) => {
-
-    var lengthMM = 200;
-    var heightMM = 50;
-    var leftMeasure = [10, 20, 10, 10, 0, 10, 20, 30, 20];
-    var rightMeasure = [10, 10, 17, 20, 10, 10, 10, 10, 5];
-    var extraRoundness = 5;
+const utensil = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
     if (leftMeasure.length != rightMeasure.length) throw ("need same # of measurements");
 
@@ -44,7 +38,20 @@ const main = (params) => {
     }
 
     var h = hullChain(shapes);
-    return expand({ delta: extraRoundness, corners: 'round', segments: 32 }, h);
+    return h;
+}
+
+const main = (params) => {
+
+    var heightMM = 50;
+    var fork1 = utensil(
+        200, heightMM, [10, 10, 10, 10, 10, 20, 25, 20, 5]
+        , [10, 10, 10, 10, 10, 20, 25, 20, 5]);
+    return fork1;
+    //     var extraRoundness = 5;
+
+    //     return expand({ delta: extraRoundness, corners: 'round', segments: 32 }, h);
+
 }
 
 module.exports = { main }
