@@ -1,10 +1,13 @@
 
+    
+
+
 /**
  * pop this in openjscad.xyz
  */
 
 const jscad = require('@jscad/modeling')
-const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
+const { cuboid, sphere, roundedCuboid, cylinder, ellipsoid } = jscad.primitives
 const { translate, rotate, align } = jscad.transforms
 const { expand } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
@@ -81,14 +84,33 @@ const main = (params) => {
     var startY = 0;
     startX += rim;
 
-    for (var i = 0; i < shapes.length; i++) {
+    // individual grabbers.  Model single grabber based on hand shape 
+    var grabber = ellipsoid({
+        radius: [60, 30, 50],
+        segments: 32
+    });
+    var grabbershapes = [];
 
-        var bb = measureBoundingBox(shapes[i]);
+    for (var i = 0; i < shapes.length; i++) {
 
         shapes[i] = align({
             modes: ['min', 'min', 'min'],
             relativeTo: [startX, rim, bottom]
         }, shapes[i]);
+
+        var bb = measureBoundingBox(shapes[i]);
+        console.log(bb);
+
+        var o = {
+            modes: ['center', 'center', 'min'],
+            relativeTo: [
+                (bb[0][0] + bb[1][0]) / 2,
+                0, // (bb[0][1] + bb[1][1]) / 2,
+                bb[0][2]
+            ]
+        };
+        var ig = align(o, grabber);
+        grabbershapes.push(ig);
 
         startX += (bb[1][0] - bb[0][0]);
         startX += between;
@@ -107,16 +129,36 @@ const main = (params) => {
         relativeTo: [0, 0, 0]
     }, base);
 
-    // grabber
-    var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
-    grab = rotate([0, TAU / 4, 0], grab)
-    grab = translate([width / 2, depth / 2, height], grab);
-    
-    base = subtract(base, grab); 
+
+    // grabber v1: cylinder
+    //    var grab = cylinder({ 
+    //        radius: height - bottom - rim, 
+    //        height: width + rim * 2, 
+    //        segments: 64 });
+    //    grab = rotate([0, TAU / 4, 0], grab)
+    //    grab = translate([width / 2, depth / 2, height], grab);
+
+    // grabber v2: sphere, transformed.  Very meh. 
+    //     var grab = ellipsoid(
+    //         {
+    //             radius:[width*2,depth/2-rim,height-bottom] 
+    // , 
+    //             segments: 64
+    //         });
+    //     grab = align({
+    //         modes:['center','center','min'],
+    //         relativeTo:[width/2,depth/2,bottom]
+    //     }, grab)
+
     for (var i = 0; i < shapes.length; i++) {
+        // move the grabber to the mid-y
+        grabbershapes[i] = translate([0,depth/2,0],grabbershapes[i]);
         base = subtract(base, shapes[i]);
+        base = subtract(base, grabbershapes[i]);
     }
+
     return base;
 }
 
 module.exports = { main }
+
