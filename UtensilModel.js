@@ -5,13 +5,13 @@
 
 const jscad = require('@jscad/modeling')
 const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
-const { translate, rotate } = jscad.transforms
+const { translate, rotate, align } = jscad.transforms
 const { expand } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
 const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
 const { union, subtract, intersect } = jscad.booleans
-const { TAU } = require('@jscad/modeling').maths.constants
-
+const { TAU } = jscad.maths.constants
+const { measureAggregateBoundingBox, measureBoundingBox } = jscad.measurements
 
 // Returns X-centered, Y-going away, and Z-resting on 0
 const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
@@ -49,46 +49,74 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
 const main = (params) => {
 
-    var width = 110;
-    var height = 50;
-    var bottom = 5;
-    var rim = 5;
-    var roundness = 5;
-    var depth = 260 + rim * 2 + roundness * 2;
+    var height = 50;  // height of box, not of items
+    var roundness = 2;
+    var bottom = 2;
+    var rim = 3;
+    var between = 2;
 
-    var h1 = height - roundness - bottom;
+    var h1 = height - roundness - bottom; // height of these items
+    // other items might have their own height
 
-    var knife = solidByLengths(260,h1,
-        [1,15,16,13,12,11,10,9,8,7,7,10,12,13,13,14,14,13,12,12,11,10, 7],
-        [1, 7, 9, 7, 6, 6, 5,5,5,5,6,12,14,15,15,15,15,15,15,15,15,15,15],)
-    var fork = solidByLengths(220, h1, 
-        [1,10,13,11,10,8,6,5,5,5,5,5,5,5,8,14,15,15,15,14,13,12]);
+    var knife = solidByLengths(260, h1,
+        [1, 15, 16, 13, 12, 11, 10, 9, 8, 7, 7, 10, 12, 13, 13, 14, 14, 13, 12, 12, 11, 10, 7],
+        [1, 7, 9, 7, 6, 6, 5, 5, 5, 5, 6, 12, 14, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],)
+    var fork = solidByLengths(220, h1,
+        [1, 10, 13, 11, 10, 8, 6, 5, 5, 5, 5, 5, 5, 5, 8, 14, 15, 15, 15, 14, 13, 12]);
+
+    var shapes = [knife, fork];
+    var c1 = [1, 0, 0, 0.5];
+    var c2 = [0, 1, 0, 0.5];
+    var c3 = [0, 0, 1, 0.5];
 
     // make them rounder
     var e = { delta: roundness, corners: 'round', segments: 16 };
-    knife = expand(e, knife);
-    fork = expand(e, fork);
+    for (var i = 0; i < shapes.length; i++) {
+        shapes[i] = expand(e, shapes[i]);
+    }
 
-    // position
-    knife = translate([25, rim + roundness, bottom + roundness], knife);
-    fork = translate([80, rim + roundness, bottom + roundness], fork);
+    // figure out layout
 
-    // base 
-    var base = cuboid({ size: [width, depth, height] });
-    base = translate([width / 2, depth / 2, height / 2], base);
+    var startX = 0;
+    var startY = 0;
+    startX += rim;
+
+    for (var i = 0; i < shapes.length; i++) {
+
+        var bb = measureBoundingBox(shapes[i]);
+
+        shapes[i] = align({
+            modes: ['min', 'min', 'min'],
+            relativeTo: [startX, rim, bottom]
+        }, shapes[i]);
+
+        startX += (bb[1][0] - bb[0][0]);
+        startX += between;
+    }
+
+    // container to keep them in, but at specific height only
+    var bb = measureAggregateBoundingBox(shapes);
+    var width = bb[1][0] - bb[0][0] + (rim * 2);
+    var depth = bb[1][1] - bb[0][1] + (rim * 2);
+    var base = cuboid({
+        size:
+            [width, depth, height]
+    });
+    base = align({
+        modes: ['min', 'min', 'min'],
+        relativeTo: [0, 0, 0]
+    }, base);
 
     // grabber
     var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
     grab = rotate([0, TAU / 4, 0], grab)
     grab = translate([width / 2, depth / 2, height], grab);
-
-    base = subtract(base, knife);
-    base = subtract(base, fork);
-    base = subtract(base, grab);
-    base = colorize([1, 0, 0, 0.5], base);
-
-    return [base];
-
+    
+    base = subtract(base, grab); 
+    for (var i = 0; i < shapes.length; i++) {
+        base = subtract(base, shapes[i]);
+    }
+    return base;
 }
 
 module.exports = { main }
