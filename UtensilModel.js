@@ -5,7 +5,7 @@
 
 const jscad = require('@jscad/modeling')
 const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
-const { translate, rotate, align } = jscad.transforms
+const { translate, rotate, align, scale } = jscad.transforms
 const { expand } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
 const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
@@ -25,15 +25,19 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
     var smallestLeft = leftMeasure[0];
     var smallestRight = rightMeasure[0];
     for (var i = 0; i < leftMeasure; i++) {
-        if (leftMeasure[i] < smallestLeft) smallestLeft = leftMeasure[i];
-        if (rightMeasure[i] < smallestRight) smallestRight = rightMeasure[i];
+        if (leftMeasure[i] > 0 && rightMeasure[i] > 0) {
+            if (leftMeasure[i] < smallestLeft) smallestLeft = leftMeasure[i];
+            if (rightMeasure[i] < smallestRight) smallestRight = rightMeasure[i];
+        }
     }
 
     var shapes = [];
     for (var i = 0; i < leftMeasure.length; i++) {
 
+        if (leftMeasure[i] == 0 || rightMeasure[i] == 0) continue;
+
         var combinedMeasure = leftMeasure[i] + rightMeasure[i];  // centered at 0
-        var offsetToCenter = +leftMeasure[i] * .5 - rightMeasure[i] * 0.5; // -((a+b)/2)+a
+        var offsetToCenter = -leftMeasure[i] * .5 + rightMeasure[i] * 0.5; // -((a+b)/2)+a
 
         var c = cuboid({
             size: [combinedMeasure, perItemLength, heightMM]
@@ -58,9 +62,15 @@ const main = (params) => {
     var h1 = height - roundness - bottom; // height of these items
     // other items might have their own height
 
-    var knife = solidByLengths(260, h1,
-        [1, 15, 16, 13, 12, 11, 10, 9, 8, 7, 7, 10, 12, 13, 13, 14, 14, 13, 12, 12, 11, 10, 7],
-        [1, 7, 9, 7, 6, 6, 5, 5, 5, 5, 6, 12, 14, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],)
+    // lego: 143.8mm = 18 dots
+    var dtl = 148.8 / 18;
+
+    // using 0,0 as being "skip this block"
+    var knife = solidByLengths(30, h1,
+        [1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+        [2, 2, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0.1]);
+    knife = scale([dtl, dtl, 1], knife);
+
     var fork = solidByLengths(220, h1,
         [1, 10, 13, 11, 10, 8, 6, 5, 5, 5, 5, 5, 5, 5, 8, 14, 15, 15, 15, 14, 13, 12]);
 
@@ -111,8 +121,8 @@ const main = (params) => {
     var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
     grab = rotate([0, TAU / 4, 0], grab)
     grab = translate([width / 2, depth / 2, height], grab);
-    
-    base = subtract(base, grab); 
+
+    base = subtract(base, grab);
     for (var i = 0; i < shapes.length; i++) {
         base = subtract(base, shapes[i]);
     }
