@@ -54,7 +54,7 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
 const main = (params) => {
 
-    var height = 6;  // height of box, not of items
+    var height = 50;  // height of box, not of items
     var roundness = 2;
     var bottom = 2;
     var rim = 3;
@@ -97,15 +97,17 @@ const main = (params) => {
 
     var chopstick = solidByLengths(103 + 124, h1,
         [5.7 / 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.5 / 2]);
-    // straight measurements, not lego scale. 
+    // straight measurements, not lego scale.
+    // two chopsticks side by side though
+    chopstick = scale([2,1,1], chopstick); 
 
     var shapes = [chopstick,
-        //chopstick, 
         knife,
-        //knife, 
+        knife,
         bigfork,
         fork,
-        spoon, //spoon
+        spoon,
+        spoon
     ];
     var c1 = [1, 0, 0, 0.5];
     var c2 = [0, 1, 0, 0.5];
@@ -114,7 +116,7 @@ const main = (params) => {
     // make them rounder
     var e = { delta: roundness, corners: 'round', segments: 16 };
     for (var i = 0; i < shapes.length; i++) {
-        //        shapes[i] = expand(e, shapes[i]);
+        shapes[i] = expand(e, shapes[i]);
     }
 
     // figure out layout
@@ -135,7 +137,7 @@ const main = (params) => {
         startX += (bb[1][0] - bb[0][0]);
         startX += between;
     }
-    return shapes;
+    // return shapes;
 
     // container to keep them in, but at specific height only
     var bb = measureAggregateBoundingBox(shapes);
@@ -153,7 +155,7 @@ const main = (params) => {
     // grabber
     var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
     grab = rotate([0, TAU / 4, 0], grab)
-    grab = translate([width / 2, depth / 2, height], grab);
+    grab = translate([width / 2, height - bottom - rim + (rim * 4), height], grab);
 
     base = subtract(base, grab);
     for (var i = 0; i < shapes.length; i++) {
@@ -163,3 +165,4 @@ const main = (params) => {
 }
 
 module.exports = { main }
+
