@@ -1,4 +1,5 @@
 
+
 /**
  * pop this in openjscad.xyz
  */
@@ -63,7 +64,7 @@ const main = (params) => {
     // other items might have their own height
 
     // lego: 143.8mm = 18 dots
-    var dtl = 148.8 / 18;
+    var dtl = 143.8 / 18;
 
     // using 0,0 as being "skip this block"
     var knife = solidByLengths(30, h1,
@@ -71,10 +72,27 @@ const main = (params) => {
         [2, 2, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0.1]);
     knife = scale([dtl, dtl, 1], knife);
 
-    var fork = solidByLengths(220, h1,
-        [1, 10, 13, 11, 10, 8, 6, 5, 5, 5, 5, 5, 5, 5, 8, 14, 15, 15, 15, 14, 13, 12]);
+    var bigfork = solidByLengths(26, h1,
+        [1.5, 0,
+            1.5, 0, 0, 0, 0, 0,
+            .5, 0, 0, 0, 0, 0.5,
+            0, 0, 1.7,
+            0, 0, 0, 0, 0, 1.5, 0, 1.5]);
+    bigfork = scale([dtl, dtl, 1], bigfork);
 
-    var shapes = [knife, fork];
+    var fork = solidByLengths(24, h1,
+        [1.5, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0.5, 0, 1.5, 0, 0, 1.6, 0, 0, 0, 0, 0, 1.5]);
+    fork = scale([dtl, dtl, 1], fork);
+
+    var spoon = solidByLengths(21, h1,
+        [1.5, 0, 0, 0, 0,
+            0, 0, 0.5, 0, 0,
+            0, 0, 0.5, 0, 0,
+            0, 2.5, 0, 2.5, 0,
+            1.5]);
+    spoon = scale([dtl, dtl, 1], spoon);
+
+    var shapes = [knife, bigfork, fork, spoon];
     var c1 = [1, 0, 0, 0.5];
     var c2 = [0, 1, 0, 0.5];
     var c3 = [0, 0, 1, 0.5];
@@ -103,6 +121,7 @@ const main = (params) => {
         startX += (bb[1][0] - bb[0][0]);
         startX += between;
     }
+    return [bigfork, shapes[1]];
 
     // container to keep them in, but at specific height only
     var bb = measureAggregateBoundingBox(shapes);
