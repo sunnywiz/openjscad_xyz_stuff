@@ -29,7 +29,7 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
         if (leftMeasure[i] > 0 && rightMeasure[i] > 0) {
             if (leftMeasure[i] < smallestLeft) smallestLeft = leftMeasure[i];
             if (rightMeasure[i] < smallestRight) smallestRight = rightMeasure[i];
-        }
+        } a
     }
 
     var shapes = [];
@@ -84,13 +84,16 @@ const main = (params) => {
         [1.5, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0.5, 0, 1.5, 0, 0, 1.6, 0, 0, 0, 0, 0, 1.5]);
     fork = scale([dtl, dtl, 1], fork);
 
+    // set up on a lego "jigsaw" 
+    // measure the widths in mm at each stage
     var spoon = solidByLengths(21, h1,
-        [1.5, 0, 0, 0, 0,
-            0, 0, 0.5, 0, 0,
-            0, 0, 0.5, 0, 0,
-            0, 2.5, 0, 2.5, 0,
-            1.5]);
-    spoon = scale([dtl, dtl, 1], spoon);
+        [18.6, 18.6, 0, 0
+            , 12, 10.1, 8.5, 7.3,
+            0, 0, 0, 0,
+            7.3, 19, 30, 33.8,
+            33.9, 33.1, 30.0, 25.2,
+            17.4]);
+    spoon = scale([0.5, dtl, 1], spoon);
 
     var chopstick = solidByLengths(103 + 124, h1,
         [5.7 / 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.5 / 2]);
@@ -111,7 +114,7 @@ const main = (params) => {
     // make them rounder
     var e = { delta: roundness, corners: 'round', segments: 16 };
     for (var i = 0; i < shapes.length; i++) {
-        shapes[i] = expand(e, shapes[i]);
+        //        shapes[i] = expand(e, shapes[i]);
     }
 
     // figure out layout
