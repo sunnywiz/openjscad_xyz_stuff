@@ -7,7 +7,7 @@
 const jscad = require('@jscad/modeling')
 const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
 const { translate, rotate, align, scale } = jscad.transforms
-const { expand } = jscad.expansions
+const { expand, offset } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
 const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
 const { union, subtract, intersect } = jscad.booleans
@@ -54,7 +54,7 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
 
 const main = (params) => {
 
-    var height = 50;  // height of box, not of items
+    var height = 6;  // height of box, not of items
     var roundness = 2;
     var bottom = 2;
     var rim = 3;
@@ -92,7 +92,18 @@ const main = (params) => {
             1.5]);
     spoon = scale([dtl, dtl, 1], spoon);
 
-    var shapes = [knife, bigfork, fork, spoon];
+    var chopstick = solidByLengths(103 + 124, h1,
+        [5.7 / 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.5 / 2]);
+    // straight measurements, not lego scale. 
+
+    var shapes = [chopstick,
+        //chopstick, 
+        knife,
+        //knife, 
+        bigfork,
+        fork,
+        spoon, //spoon
+    ];
     var c1 = [1, 0, 0, 0.5];
     var c2 = [0, 1, 0, 0.5];
     var c3 = [0, 0, 1, 0.5];
@@ -121,7 +132,7 @@ const main = (params) => {
         startX += (bb[1][0] - bb[0][0]);
         startX += between;
     }
-    return [bigfork, shapes[1]];
+    return shapes;
 
     // container to keep them in, but at specific height only
     var bb = measureAggregateBoundingBox(shapes);
