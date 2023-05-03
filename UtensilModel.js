@@ -1,61 +1,22 @@
 
-
-/**
- * pop this in openjscad.xyz
- */
+// Upload parent folder to https://openjscad.xyz
 
 const jscad = require('@jscad/modeling')
-const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
+const { cuboid, cylinder } = jscad.primitives
 const { translate, rotate, align, scale } = jscad.transforms
-const { expand, offset } = jscad.expansions
-const { hull, hullChain } = jscad.hulls
-const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
+const { expand, offset} = jscad.expansions
+const { colorize } = jscad.colors
 const { union, subtract, intersect } = jscad.booleans
 const { TAU } = jscad.maths.constants
 const { measureAggregateBoundingBox, measureBoundingBox } = jscad.measurements
 
-// Returns X-centered, Y-going away, and Z-resting on 0
-const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
-
-    if (!rightMeasure) rightMeasure = leftMeasure;
-    if (leftMeasure.length != rightMeasure.length) throw ("need same # of measurements");
-
-    var shapes = [];
-    var perItemLength = (lengthMM * 1.0) / (leftMeasure.length);
-
-    var smallestLeft = leftMeasure[0];
-    var smallestRight = rightMeasure[0];
-    for (var i = 0; i < leftMeasure; i++) {
-        if (leftMeasure[i] > 0 && rightMeasure[i] > 0) {
-            if (leftMeasure[i] < smallestLeft) smallestLeft = leftMeasure[i];
-            if (rightMeasure[i] < smallestRight) smallestRight = rightMeasure[i];
-        } a
-    }
-
-    var shapes = [];
-    for (var i = 0; i < leftMeasure.length; i++) {
-
-        if (leftMeasure[i] == 0 || rightMeasure[i] == 0) continue;
-
-        var combinedMeasure = leftMeasure[i] + rightMeasure[i];  // centered at 0
-        var offsetToCenter = -leftMeasure[i] * .5 + rightMeasure[i] * 0.5; // -((a+b)/2)+a
-
-        var c = cuboid({
-            size: [combinedMeasure, perItemLength, heightMM]
-        });
-
-        var translated = translate([offsetToCenter, perItemLength * i + (perItemLength / 2), heightMM / 2], c);
-        shapes.push(translated);
-    }
-
-    var h = hullChain(shapes);
-    return h;
-}
+const { solidByLengths } = require('./solidByLengths.js');
 
 const main = (params) => {
 
     var height = 50;  // height of box, not of items
-    var roundness = 2;
+    var roundness = 5;
+    var fit = 2; 
     var bottom = 2;
     var rim = 3;
     var between = 2;
@@ -114,9 +75,9 @@ const main = (params) => {
     var c3 = [0, 0, 1, 0.5];
 
     // make them rounder
-    var e = { delta: roundness, corners: 'round', segments: 16 };
     for (var i = 0; i < shapes.length; i++) {
-        shapes[i] = expand(e, shapes[i]);
+        shapes[i] = offset({ delta: (roundness-fit), corners: 'round', segments: 8 }, shapes[i]);
+        shapes[i] = expand({ delta: roundness, corners: 'round', segments: 8 }, shapes[i]);
     }
 
     // figure out layout
