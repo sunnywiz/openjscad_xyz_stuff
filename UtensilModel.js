@@ -1,12 +1,13 @@
 
+
 /**
  * pop this in openjscad.xyz
  */
 
 const jscad = require('@jscad/modeling')
 const { cuboid, sphere, roundedCuboid, cylinder } = jscad.primitives
-const { translate, rotate, align } = jscad.transforms
-const { expand } = jscad.expansions
+const { translate, rotate, align, scale } = jscad.transforms
+const { expand, offset } = jscad.expansions
 const { hull, hullChain } = jscad.hulls
 const { colorize, hslToRgb, colorNameToRgb, hexToRgb, hsvToRgb } = jscad.colors
 const { union, subtract, intersect } = jscad.booleans
@@ -25,15 +26,19 @@ const solidByLengths = (lengthMM, heightMM, leftMeasure, rightMeasure) => {
     var smallestLeft = leftMeasure[0];
     var smallestRight = rightMeasure[0];
     for (var i = 0; i < leftMeasure; i++) {
-        if (leftMeasure[i] < smallestLeft) smallestLeft = leftMeasure[i];
-        if (rightMeasure[i] < smallestRight) smallestRight = rightMeasure[i];
+        if (leftMeasure[i] > 0 && rightMeasure[i] > 0) {
+            if (leftMeasure[i] < smallestLeft) smallestLeft = leftMeasure[i];
+            if (rightMeasure[i] < smallestRight) smallestRight = rightMeasure[i];
+        } a
     }
 
     var shapes = [];
     for (var i = 0; i < leftMeasure.length; i++) {
 
+        if (leftMeasure[i] == 0 || rightMeasure[i] == 0) continue;
+
         var combinedMeasure = leftMeasure[i] + rightMeasure[i];  // centered at 0
-        var offsetToCenter = +leftMeasure[i] * .5 - rightMeasure[i] * 0.5; // -((a+b)/2)+a
+        var offsetToCenter = -leftMeasure[i] * .5 + rightMeasure[i] * 0.5; // -((a+b)/2)+a
 
         var c = cuboid({
             size: [combinedMeasure, perItemLength, heightMM]
@@ -58,13 +63,52 @@ const main = (params) => {
     var h1 = height - roundness - bottom; // height of these items
     // other items might have their own height
 
-    var knife = solidByLengths(260, h1,
-        [1, 15, 16, 13, 12, 11, 10, 9, 8, 7, 7, 10, 12, 13, 13, 14, 14, 13, 12, 12, 11, 10, 7],
-        [1, 7, 9, 7, 6, 6, 5, 5, 5, 5, 6, 12, 14, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],)
-    var fork = solidByLengths(220, h1,
-        [1, 10, 13, 11, 10, 8, 6, 5, 5, 5, 5, 5, 5, 5, 8, 14, 15, 15, 15, 14, 13, 12]);
+    // lego: 143.8mm = 18 dots
+    var dtl = 143.8 / 18;
 
-    var shapes = [knife, fork];
+    // using 0,0 as being "skip this block"
+    var knife = solidByLengths(30, h1,
+        [1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+        [2, 2, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0.1]);
+    knife = scale([dtl, dtl, 1], knife);
+
+    var bigfork = solidByLengths(26, h1,
+        [1.5, 0,
+            1.5, 0, 0, 0, 0, 0,
+            .5, 0, 0, 0, 0, 0.5,
+            0, 0, 1.7,
+            0, 0, 0, 0, 0, 1.5, 0, 1.5]);
+    bigfork = scale([dtl, dtl, 1], bigfork);
+
+    var fork = solidByLengths(24, h1,
+        [1.5, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0.5, 0, 1.5, 0, 0, 1.6, 0, 0, 0, 0, 0, 1.5]);
+    fork = scale([dtl, dtl, 1], fork);
+
+    // set up on a lego "jigsaw" 
+    // measure the widths in mm at each stage
+    var spoon = solidByLengths(21, h1,
+        [18.6, 18.6, 0, 0
+            , 12, 10.1, 8.5, 7.3,
+            0, 0, 0, 0,
+            7.3, 19, 30, 33.8,
+            33.9, 33.1, 30.0, 25.2,
+            17.4]);
+    spoon = scale([0.5, dtl, 1], spoon);
+
+    var chopstick = solidByLengths(103 + 124, h1,
+        [5.7 / 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3.5 / 2]);
+    // straight measurements, not lego scale.
+    // two chopsticks side by side though
+    chopstick = scale([2,1,1], chopstick); 
+
+    var shapes = [chopstick,
+        knife,
+        knife,
+        bigfork,
+        fork,
+        spoon,
+        spoon
+    ];
     var c1 = [1, 0, 0, 0.5];
     var c2 = [0, 1, 0, 0.5];
     var c3 = [0, 0, 1, 0.5];
@@ -93,6 +137,7 @@ const main = (params) => {
         startX += (bb[1][0] - bb[0][0]);
         startX += between;
     }
+    // return shapes;
 
     // container to keep them in, but at specific height only
     var bb = measureAggregateBoundingBox(shapes);
@@ -110,9 +155,9 @@ const main = (params) => {
     // grabber
     var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
     grab = rotate([0, TAU / 4, 0], grab)
-    grab = translate([width / 2, depth / 2, height], grab);
-    
-    base = subtract(base, grab); 
+    grab = translate([width / 2, height - bottom - rim + (rim * 4), height], grab);
+
+    base = subtract(base, grab);
     for (var i = 0; i < shapes.length; i++) {
         base = subtract(base, shapes[i]);
     }
@@ -120,3 +165,4 @@ const main = (params) => {
 }
 
 module.exports = { main }
+
