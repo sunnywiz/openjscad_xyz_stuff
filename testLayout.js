@@ -1,4 +1,5 @@
 
+
 const jscad = require('@jscad/modeling')
 const { cuboid, cylinder } = jscad.primitives
 const { translate, rotate, align, scale } = jscad.transforms
@@ -9,6 +10,7 @@ const { TAU } = jscad.maths.constants
 const { measureAggregateBoundingBox,
     measureBoundingBox,
     measureVolume } = jscad.measurements
+const { hullChain } = jscad.hulls
 
 const arrange = (shapes) => {
 
@@ -70,6 +72,16 @@ const arrange = (shapes) => {
     return shapes;
 }
 
+const projectup = (shapes) => {
+    var projectheight = 10;
+    for (var i = 0; i < shapes.length; i++) {
+        c = translate([0, 0, projectheight], shapes[i]);
+        h = hullChain([shapes[i], c]);
+        shapes[i] = h;
+    }
+    return shapes;
+}
+
 const main = (params) => {
 
     var shapes = [];
@@ -82,8 +94,10 @@ const main = (params) => {
             )
         )
     );
-    shapes.push(cylinder());
+    shapes.push(rotate([TAU / 4, TAU / 4, 0], cylinder()));
     shapes.push(cuboid({ size: [1, 3, 0.1] }));
+
+    shapes = projectup(shapes);
 
     shapes = arrange(shapes);
 
