@@ -3,12 +3,12 @@
 
 const jscad = require('@jscad/modeling')
 const { cuboid, cylinder } = jscad.primitives
-const { translate, rotate, align, scale, mirrorY } = jscad.transforms
+const { translate, rotate, align, scale, scaleZ, mirrorY } = jscad.transforms
 const { expand, offset } = jscad.expansions
 const { colorize } = jscad.colors
 const { union, subtract, intersect } = jscad.booleans
 const { TAU } = jscad.maths.constants
-const { measureAggregateBoundingBox, measureBoundingBox } = jscad.measurements
+const { measureAggregateBoundingBox, measureBoundingBox, measureDimensions } = jscad.measurements
 
 const { solidByLengths } = require('./solidByLengths.js');
 const { layout } = require('./layout.js');
@@ -16,8 +16,9 @@ const { layout } = require('./layout.js');
 const getParameterDefinitions = () => [
     {
         name: 'choice', type: 'radio', caption: 'What To Generate',
-        values: ['rawshape', 'outline'],
-        captions: ['Raw Shapes Arranged','Outline of Shapes Arranged'], initial: 'rawshape'
+        values: ['init', 'rawshape', 'roundedcuts', 'outlinedholders'],
+        captions: ['Initial - nothing', 'Raw Shapes Arranged', 'Rounded Cuts Arranged', 'outlinedholders'],
+        initial: 'init'
     },
 ]
 
@@ -29,6 +30,8 @@ const main = (params) => {
     var bottom = 2;
     var rim = 3;
     var between = 2;
+
+    if (params.choice == 'init') return cuboid();
 
     var h1 = height - roundness - bottom; // height of these items
     // other items might have their own height
@@ -53,15 +56,63 @@ const main = (params) => {
     var c2 = [0, 1, 0, 0.5];
     var c3 = [0, 0, 1, 0.5];
 
-    if (params.choice='rawshape') { 
-        shapes = layout({separation: between}, shapes);
-        return shapes; 
+    if (params.choice == 'rawshape') {
+        shapes = layout({ separation: between }, shapes);
+        return shapes;
     }
-    return shapes;  
-    // make them rounder
+
+    // extend up to the height we need them to be
+
     for (var i = 0; i < shapes.length; i++) {
-        shapes[i] = offset({ delta: (roundness - fit), corners: 'round', segments: 8 }, shapes[i]);
-        shapes[i] = expand({ delta: roundness, corners: 'round', segments: 8 }, shapes[i]);
+
+        // this will not work for things that don't have flat bottom profiles
+
+        var d = measureDimensions(shapes[i]);
+        var sf = (height * 2) / d[2];
+        if (sf < 1) sf = 1;
+        shapes[i] = scaleZ(sf, shapes[i]);
+
+        // proceed with making them rounder, the space for them to fall into
+        var e = expand({ delta: roundness, corners: 'round', segments: 4 }, shapes[i]);
+        shapes[i] = e;
+    }
+
+    shapes = layout({ separation: between }, shapes);
+
+    if (params.choice == 'roundedcuts') {
+        return shapes;
+    }
+
+    if (params.choice == 'outlinedholders') {
+        var x = [];
+        for (var i = 0; i < shapes.length; i++) {
+            console.log("reexpanding "+i+1);
+            var egg = expand({ delta: between, corners: 'round', segments: 4 }, shapes[i]);
+            console.log("subtracting original "+i+1);
+            var wall = subtract(egg, shapes[i]);
+            x.push(wall);
+        }
+        console.log("union");
+        var u = union(x);
+        // we now need to carve up the walls
+        // luckily, our (rounded) shapes are resting on Z=0 and touching x=0 and y=0
+        var bb = measureAggregateBoundingBox(x);
+        var maxwidth = bb[1][0] - bb[0][0];
+        var maxdepth = bb[1][1] - bb[0][1];
+        var cutterCube = cuboid({ size: [maxwidth * 5, maxdepth * 5, height * 5] });
+        cutterCube = align({
+            modes: ['center', 'center', 'max'],
+            relativeTo: [0, 0, 0]
+        }, cutterCube);
+        console.log("bottom cut");
+        u = subtract(u, cutterCube);
+        cutterCube = align({
+            modes: ['center', 'center', 'min'],
+            relativeTo: [0, 0, height]
+        }, cutterCube);
+        console.log("top cut");
+        u = subtract(u, cutterCube);
+        return u;
     }
 
     // figure out layout
