@@ -24,7 +24,7 @@ const getParameterDefinitions = () => [
 
 const main = (params) => {
 
-    var height = 50;  // height of box, not of items
+    var height = 30;  // height of box, not of items
     var roundness = 5;
     var fit = 2;
     var bottom = 2;
@@ -49,7 +49,14 @@ const main = (params) => {
             28]);
     bigSpoon = scale([0.5, dtl, 1], bigSpoon);
 
-    var shapes = [bigSpoon, mirrorY(bigSpoon)];
+    var server = solidByLengths(28, 1,
+        [26, 26, 0, 0, 0, 0, 0, 0,
+            9.5, 0, 0, 0, 0, 0, 0, 0,
+            8, 14, 34, 39, 41, 41, 41, 40,
+            39, 0, 0, 29]);
+    server = scale([0.5, dtl, 1], server);
+
+    var shapes = [bigSpoon, mirrorY(server)];
 
     // for debugging
     var c1 = [1, 0, 0, 0.5];
@@ -86,9 +93,9 @@ const main = (params) => {
     if (params.choice == 'outlinedholders') {
         var x = [];
         for (var i = 0; i < shapes.length; i++) {
-            console.log("reexpanding "+i+1);
+            console.log("reexpanding " + i + 1);
             var egg = expand({ delta: between, corners: 'round', segments: 4 }, shapes[i]);
-            console.log("subtracting original "+i+1);
+            console.log("subtracting original " + i + 1);
             var wall = subtract(egg, shapes[i]);
             x.push(wall);
         }
