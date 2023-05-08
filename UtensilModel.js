@@ -3,7 +3,7 @@
 
 const jscad = require('@jscad/modeling')
 const { cuboid, cylinder } = jscad.primitives
-const { translate, rotate, align, scale } = jscad.transforms
+const { translate, rotate, align, scale, mirrorY } = jscad.transforms
 const { expand, offset } = jscad.expansions
 const { colorize } = jscad.colors
 const { union, subtract, intersect } = jscad.booleans
@@ -11,12 +11,13 @@ const { TAU } = jscad.maths.constants
 const { measureAggregateBoundingBox, measureBoundingBox } = jscad.measurements
 
 const { solidByLengths } = require('./solidByLengths.js');
+const { layout } = require('./layout.js');
 
 const getParameterDefinitions = () => [
     {
         name: 'choice', type: 'radio', caption: 'What To Generate',
-        values: ['rawshape'],
-        captions: ['Raw Shape'], initial: 'rawshape'
+        values: ['rawshape', 'outline'],
+        captions: ['Raw Shapes Arranged','Outline of Shapes Arranged'], initial: 'rawshape'
     },
 ]
 
@@ -45,15 +46,17 @@ const main = (params) => {
             28]);
     bigSpoon = scale([0.5, dtl, 1], bigSpoon);
 
-    var shapes = [bigSpoon
-    ];
+    var shapes = [bigSpoon, mirrorY(bigSpoon)];
 
+    // for debugging
     var c1 = [1, 0, 0, 0.5];
     var c2 = [0, 1, 0, 0.5];
     var c3 = [0, 0, 1, 0.5];
 
-    if (params.choice='rawshape') return shapes; 
-
+    if (params.choice='rawshape') { 
+        shapes = layout({separation: between}, shapes);
+        return shapes; 
+    }
     return shapes;  
     // make them rounder
     for (var i = 0; i < shapes.length; i++) {
