@@ -69,7 +69,7 @@ const main = (params) => {
     }
 
     // extend up to the height we need them to be
-
+    var projectedUpToHeightShapes = [];
     for (var i = 0; i < shapes.length; i++) {
 
         // this will not work for things that don't have flat bottom profiles
@@ -77,94 +77,105 @@ const main = (params) => {
         var d = measureDimensions(shapes[i]);
         var sf = (height * 2) / d[2];
         if (sf < 1) sf = 1;
-        shapes[i] = scaleZ(sf, shapes[i]);
+        var p1 = scaleZ(sf, shapes[i]);
 
-        // proceed with making them rounder, the space for them to fall into
-        var e = expand({ delta: roundness, corners: 'round', segments: 4 }, shapes[i]);
-        shapes[i] = e;
+        projectedUpToHeightShapes.push(p1);
     }
 
-    shapes = layout({ separation: between }, shapes);
-
     if (params.choice == 'roundedcuts') {
-        return shapes;
+        // make them rounder 
+        
+        var expandedProjected = [];
+        for (var i = 0; i < projectedUpToHeightShapes.length; i++) {
+            var e = expand({ delta: roundness, corners: 'round', segments: 8 }, projectedUpToHeightShapes[i]);
+            expandedProjected.push(e);
+        }
+        
+        // THEN lay them out. This will match the final
+        var layedOutProjectedShapes = layout({ separation: between }, expandedProjected);
+        return layedOutProjectedShapes;
     }
 
     if (params.choice == 'outlinedholders') {
-        var x = [];
-        for (var i = 0; i < shapes.length; i++) {
-            console.log("reexpanding " + i + 1);
-            var egg = expand({ delta: between, corners: 'round', segments: 4 }, shapes[i]);
-            console.log("subtracting original " + i + 1);
-            var wall = subtract(egg, shapes[i]);
-            x.push(wall);
+        // this is different.  we need a double-expand .. and we're trying to just make sure things fit
+        // it won't be in the same layout as the final, as intermediary not available
+        var shelled = [];
+        for (var i = 0; i < projectedUpToHeightShapes.length; i++) {
+            var e1 = expand({ delta: roundness, corners: 'round', segments: 8 }, projectedUpToHeightShapes[i]);
+            // expanding an expanded thing is too expensive, so this instead
+            var e2 = expand({ delta: roundness + between, corners: 'round', segments: 8 }, projectedUpToHeightShapes[i]);
+            var shell = subtract(e2, e1);
+            shelled.push(shell);
         }
+
+        var layedOutShells = layout({ seperation: 1 }, shelled);
+
         console.log("union");
-        var u = union(x);
+        var u = union(layedOutShells);
         // we now need to carve up the walls
-        // luckily, our (rounded) shapes are resting on Z=0 and touching x=0 and y=0
-        var bb = measureAggregateBoundingBox(x);
-        var maxwidth = bb[1][0] - bb[0][0];
-        var maxdepth = bb[1][1] - bb[0][1];
+        var d = measureDimensions(u);
+        var maxwidth = d[0];
+        var maxdepth = d[1];
         var cutterCube = cuboid({ size: [maxwidth * 5, maxdepth * 5, height * 5] });
         cutterCube = align({
             modes: ['center', 'center', 'max'],
-            relativeTo: [0, 0, 0]
+            relativeTo: [0, 0, roundness + between + 1]
         }, cutterCube);
         console.log("bottom cut");
         u = subtract(u, cutterCube);
         cutterCube = align({
             modes: ['center', 'center', 'min'],
-            relativeTo: [0, 0, height]
+            relativeTo: [0, 0, height - 1]
         }, cutterCube);
         console.log("top cut");
         u = subtract(u, cutterCube);
         return u;
     }
 
-    // figure out layout
-
-    var startX = 0;
-    var startY = 0;
-    startX += rim;
-
-    for (var i = 0; i < shapes.length; i++) {
-
-        var bb = measureBoundingBox(shapes[i]);
-
-        shapes[i] = align({
+    /*    // figure out layout
+    
+        var startX = 0;
+        var startY = 0;
+        startX += rim;
+    
+        for (var i = 0; i < shapes.length; i++) {
+    
+            var bb = measureBoundingBox(shapes[i]);
+    
+            shapes[i] = align({
+                modes: ['min', 'min', 'min'],
+                relativeTo: [startX, rim, bottom]
+            }, shapes[i]);
+    
+            startX += (bb[1][0] - bb[0][0]);
+            startX += between;
+        }
+        // return shapes;
+    
+        // container to keep them in, but at specific height only
+        var bb = measureAggregateBoundingBox(shapes);
+        var width = bb[1][0] - bb[0][0] + (rim * 2);
+        var depth = bb[1][1] - bb[0][1] + (rim * 2);
+        var base = cuboid({
+            size:
+                [width, depth, height]
+        });
+        base = align({
             modes: ['min', 'min', 'min'],
-            relativeTo: [startX, rim, bottom]
-        }, shapes[i]);
-
-        startX += (bb[1][0] - bb[0][0]);
-        startX += between;
-    }
-    // return shapes;
-
-    // container to keep them in, but at specific height only
-    var bb = measureAggregateBoundingBox(shapes);
-    var width = bb[1][0] - bb[0][0] + (rim * 2);
-    var depth = bb[1][1] - bb[0][1] + (rim * 2);
-    var base = cuboid({
-        size:
-            [width, depth, height]
-    });
-    base = align({
-        modes: ['min', 'min', 'min'],
-        relativeTo: [0, 0, 0]
-    }, base);
-
-    // grabber
-    var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
-    grab = rotate([0, TAU / 4, 0], grab)
-    grab = translate([width / 2, height - bottom - rim + (rim * 4), height], grab);
-
-    base = subtract(base, grab);
-    for (var i = 0; i < shapes.length; i++) {
-        base = subtract(base, shapes[i]);
-    }
-    return base;
+            relativeTo: [0, 0, 0]
+        }, base);
+    
+        // grabber
+        var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
+        grab = rotate([0, TAU / 4, 0], grab)
+        grab = translate([width / 2, height - bottom - rim + (rim * 4), height], grab);
+    
+        base = subtract(base, grab);
+        for (var i = 0; i < shapes.length; i++) {
+            base = subtract(base, shapes[i]);
+        }
+        return base;
+        */
 }
 
 module.exports = { main, getParameterDefinitions }
