@@ -16,8 +16,8 @@ const { layout } = require('./layout.js');
 const getParameterDefinitions = () => [
     {
         name: 'choice', type: 'radio', caption: 'What To Generate',
-        values: ['init', 'rawshape', 'roundedcuts', 'outlinedholders'],
-        captions: ['Initial - nothing', 'Raw Shapes Arranged', 'Rounded Cuts Arranged', 'outlinedholders'],
+        values: ['init', 'rawshape', 'roundedcuts', 'outlinedholders', 'tray'],
+        captions: ['Initial - nothing', 'Raw Shapes Arranged', 'Rounded Cuts Arranged', 'outlinedholders', 'Full Tray'],
         initial: 'init'
     },
 ]
@@ -25,9 +25,9 @@ const getParameterDefinitions = () => [
 const main = (params) => {
 
     var height = 30;  // height of box, not of items
-    var roundness = 5;
+    var roundness = 3;
     var fit = 2;
-    var bottom = 2;
+    var bottom = 3;
     var rim = 3;
     var between = 2;
 
@@ -82,20 +82,6 @@ const main = (params) => {
         projectedUpToHeightShapes.push(p1);
     }
 
-    if (params.choice == 'roundedcuts') {
-        // make them rounder 
-        
-        var expandedProjected = [];
-        for (var i = 0; i < projectedUpToHeightShapes.length; i++) {
-            var e = expand({ delta: roundness, corners: 'round', segments: 8 }, projectedUpToHeightShapes[i]);
-            expandedProjected.push(e);
-        }
-        
-        // THEN lay them out. This will match the final
-        var layedOutProjectedShapes = layout({ separation: between }, expandedProjected);
-        return layedOutProjectedShapes;
-    }
-
     if (params.choice == 'outlinedholders') {
         // this is different.  we need a double-expand .. and we're trying to just make sure things fit
         // it won't be in the same layout as the final, as intermediary not available
@@ -132,6 +118,41 @@ const main = (params) => {
         return u;
     }
 
+    var expandedProjected = [];
+    var layedOutProjectedShapes = [];
+    // make them rounder 
+
+    var expandedProjected = [];
+    for (var i = 0; i < projectedUpToHeightShapes.length; i++) {
+        var e = expand({ delta: roundness, corners: 'round', segments: 8 }, projectedUpToHeightShapes[i]);
+        expandedProjected.push(e);
+    }
+
+    // THEN lay them out. This will match the final
+    layedOutProjectedShapes = layout({ separation: between }, expandedProjected);
+
+    if (params.choice == 'roundedcuts') {
+        return layedOutProjectedShapes;
+    }
+
+    // tray and tray with cutout
+    var bb = measureAggregateBoundingBox(layedOutProjectedShapes);
+    var width = bb[1][0] - bb[0][0] + (rim * 2);
+    var depth = bb[1][1] - bb[0][1] + (rim * 2);
+    var base = cuboid({
+        size:
+            [width, depth, height]
+    });
+    base = align({
+        modes: ['min', 'min', 'min'],
+        relativeTo: [bb[0][0] - rim, bb[0][1] - rim, bb[0][2] - bottom]
+    }, base);
+
+    for (var i = 0; i < layedOutProjectedShapes.length; i++) {
+        base = subtract(base, layedOutProjectedShapes[i]);
+    }
+
+    return base;
     /*    // figure out layout
     
         var startX = 0;
