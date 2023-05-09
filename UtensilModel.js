@@ -14,17 +14,19 @@ const { solidByLengths } = require('./solidByLengths.js');
 const { layout } = require('./layout.js');
 
 const getParameterDefinitions = () => [
+    { name: 'height', type: 'number', initial: 50, min: 1.0, max: 100.0, step: 5, caption: 'Height of Tray' },    
     {
         name: 'choice', type: 'radio', caption: 'What To Generate',
-        values: ['init', 'rawshape', 'roundedcuts', 'outlinedholders', 'tray'],
-        captions: ['Initial - nothing', 'Raw Shapes Arranged', 'Rounded Cuts Arranged', 'outlinedholders', 'Full Tray'],
+        values: ['init', 'rawshape', 'roundedcuts', 'outlinedholders', 'tray','traywithcutout'],
+        captions: ['Initial - nothing', 'Raw Shapes Arranged', 'Rounded Cuts Arranged', 'outlinedholders', 'Full Tray','Tray with cutout'],
         initial: 'init'
     },
+    { name: 'grabY', type: 'number', initial: 10, min: 1.0, max: 300.0, step: 20, caption: 'Center of Cutout Y mm' },
 ]
 
 const main = (params) => {
 
-    var height = 30;  // height of box, not of items
+    var height = params.height;  // height of box, not of items
     var roundness = 3;
     var fit = 2;
     var bottom = 3;
@@ -135,7 +137,6 @@ const main = (params) => {
         return layedOutProjectedShapes;
     }
 
-    // tray and tray with cutout
     var bb = measureAggregateBoundingBox(layedOutProjectedShapes);
     var width = bb[1][0] - bb[0][0] + (rim * 2);
     var depth = bb[1][1] - bb[0][1] + (rim * 2);
@@ -152,51 +153,25 @@ const main = (params) => {
         base = subtract(base, layedOutProjectedShapes[i]);
     }
 
-    return base;
-    /*    // figure out layout
-    
-        var startX = 0;
-        var startY = 0;
-        startX += rim;
-    
-        for (var i = 0; i < shapes.length; i++) {
-    
-            var bb = measureBoundingBox(shapes[i]);
-    
-            shapes[i] = align({
-                modes: ['min', 'min', 'min'],
-                relativeTo: [startX, rim, bottom]
-            }, shapes[i]);
-    
-            startX += (bb[1][0] - bb[0][0]);
-            startX += between;
-        }
-        // return shapes;
-    
-        // container to keep them in, but at specific height only
-        var bb = measureAggregateBoundingBox(shapes);
-        var width = bb[1][0] - bb[0][0] + (rim * 2);
-        var depth = bb[1][1] - bb[0][1] + (rim * 2);
-        var base = cuboid({
-            size:
-                [width, depth, height]
-        });
-        base = align({
-            modes: ['min', 'min', 'min'],
-            relativeTo: [0, 0, 0]
-        }, base);
-    
+    if (params.choice == 'tray') { 
+        return base;
+    }
+
+    if (params.choice =='traywithcutout') {
         // grabber
-        var grab = cylinder({ radius: height - bottom - rim, height: width + rim * 2, segments: 64 });
+        var grab = cylinder({ radius: height - bottom, height: width + rim * 2, segments: 128 });
         grab = rotate([0, TAU / 4, 0], grab)
-        grab = translate([width / 2, height - bottom - rim + (rim * 4), height], grab);
+        grab = align({
+            modes:['min','min','min'],
+            relativeTo: [bb[0][0] - rim, bb[0][1] - rim, bb[0][2] - bottom]
+        },grab)
+        grab = translate([0, params.grabY, bottom], grab);
     
         base = subtract(base, grab);
-        for (var i = 0; i < shapes.length; i++) {
-            base = subtract(base, shapes[i]);
-        }
         return base;
-        */
+    }
+    
+    throw("do not know "+params.choice);
 }
 
 module.exports = { main, getParameterDefinitions }
