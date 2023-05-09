@@ -12,15 +12,14 @@ const main = () => {
   // 8 to 2.8 d, 3mm tall
   // 2.8d, 8.2 tall
   var s1 = cylinderElliptic({ 
-    height: 3, 
-    startRadius:[8/2,8/2], 
-    endRadius:[2.8/2,2.8/2] 
+    height: 4, 
+    startRadius:[9/2,9/2], 
+    endRadius:[3.4/2,3.4/2] 
   }); 
-  var s2 = cylinder({height:8.2, radius:2.8/2}); 
-  var s3 = cylinder({height:25, radius:2.5/2}); 
+  var s3 = cylinder({height:25, radius:3.4/2}); 
   var a = align({
     modes:['center','center','min']
-  },[s1,s2,s3]); 
+  },[s1,s3]); 
   var screw = union(a);
   
   a=align({
