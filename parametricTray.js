@@ -18,6 +18,7 @@ const getParameterDefinitions = () => [
         type:'choice',
         values:[
             'biggerSpoons.js',
+            'cutlery.js'
         ],
         caption:'Which items to build a tray for?',
         initial:'biggerspoons.js'},
