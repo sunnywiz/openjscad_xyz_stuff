@@ -1,4 +1,5 @@
 {
     "name": "geekygulati-openjscad-xyz-stuff",
-    "main":"parametricTray.js"
+    "main": "cutlery.js",
+    "_normal_main":"parametricTray.js"
 }

@@ -8,7 +8,6 @@ const { layout } = require('./layout.js');
 
 const getModels = () => { 
 
-
     // lego: 143.8mm = 18 dots
     var dtl = 143.8 / 18;
 
@@ -59,8 +58,11 @@ const getModels = () => {
     return shapes;     
 }
 
+const layoutOptions = { separation: 2, alignY : ['min','min','min','min',40,20,30]};
+
 const main = (params) => {
-    return layout({separation:10},getModels()); 
+    var shapes = layout(layoutOptions, getModels()); 
+    return shapes; 
 }
 
-module.exports = { getModels, main }
+module.exports = { getModels, main, layoutOptions }

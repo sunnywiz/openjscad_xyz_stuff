@@ -33,8 +33,10 @@ const getModels = () => {
         return shapes;     
 }
 
+const layoutOptions = { separation: 20};
+
 const main = (params) => {
-    return layout({separation:10},getModels()); 
+    return layout(layoutOptions,getModels()); 
 }
 
 module.exports = { getModels, main }
