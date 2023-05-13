@@ -10,7 +10,7 @@ const { union, subtract, intersect } = jscad.booleans
 const { TAU } = jscad.maths.constants
 const { measureAggregateBoundingBox, measureDimensions } = jscad.measurements
 
-const { layout } = require('./layout.js');
+const { layout } = require('./lib/layout.js');
 
 const getParameterDefinitions = () => [
     { 
@@ -18,7 +18,8 @@ const getParameterDefinitions = () => [
         type:'choice',
         values:[
             'biggerSpoons.js',
-            'cutlery.js'
+            'cutlery.js',
+            'bathroomThings.js'
         ],
         caption:'Which items to build a tray for?',
         initial:'biggerspoons.js'},
@@ -36,9 +37,11 @@ const main = (params) => {
 
     if (params.choice == 'init') return cuboid();
 
-    const { getModels }  = require('./'+params.whichModel);
+    const { getShapesAndLayout }  = require('./'+params.whichModel);
 
-    var shapes = getModels(); 
+    var mal = getShapesAndLayout(); 
+    var shapes = mal.shapes;
+    var lo = mal.layoutOptions; 
 
     var height = params.height;  // height of box, not of items
     var roundness = 3;
@@ -53,7 +56,7 @@ const main = (params) => {
     var c3 = [0, 0, 1, 0.5];
 
     if (params.choice == 'rawshape') {
-        shapes = layout({ separation: between }, shapes);
+        shapes = layout(lo, shapes);
         return shapes;
     }
 
@@ -83,7 +86,7 @@ const main = (params) => {
             shelled.push(shell);
         }
 
-        var layedOutShells = layout({ seperation: 1 }, shelled);
+        var layedOutShells = layout(lo, shelled);
 
         console.log("union");
         var u = union(layedOutShells);
@@ -118,7 +121,7 @@ const main = (params) => {
     }
 
     // THEN lay them out. This will match the final
-    layedOutProjectedShapes = layout({ separation: between }, expandedProjected);
+    layedOutProjectedShapes = layout(lo, expandedProjected);
 
     if (params.choice == 'roundedcuts') {
         return layedOutProjectedShapes;

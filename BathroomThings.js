@@ -10,10 +10,7 @@ const { TAU } = jscad.maths.constants
 const { measureAggregateBoundingBox, measureBoundingBox, measureDimensions } = jscad.measurements
 const { hull, hullChain } = jscad.hulls
 
-const { solidByLengths } = require('./solidByLengths.js');
-const { layout } = require('./layout.js');
-
-const main = (params) => {
+const getShapesAndLayout = (params) => {
 
     var toothpaste = cuboid({ size: [42, 54, 20] });
 
@@ -33,8 +30,10 @@ const main = (params) => {
     var c2 = translate([0, l / 2 - r, 0], c2);
     var deodorant = hull([c1, c2, c1b]);
 
-    return layout({ separator: 5 }, [deodorant, flonase, toothpaste]);
-
+    return { 
+        shapes: [toothpaste, flonase, deodorant], 
+        layoutOptions: {}    
+    }
 }
 
-module.exports = { main }; 
+module.exports = { getShapesAndLayout }; 

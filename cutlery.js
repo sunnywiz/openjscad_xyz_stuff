@@ -1,12 +1,11 @@
 
 const jscad = require('@jscad/modeling')
-const { translateX, scale, mirrorY,mirrorX } = jscad.transforms
-const { solidByLengths } = require('./solidByLengths.js');
-const { layout } = require('./layout.js');
+const { scale, mirrorY,mirrorX } = jscad.transforms
+const { solidByLengths } = require('./lib/solidByLengths.js');
 
 // this could almost be its own thing but i needed solidByLengths, so oh well. 
 
-const getModels = () => { 
+const getShapesAndLayout = () => { 
 
     // lego: 143.8mm = 18 dots
     var dtl = 143.8 / 18;
@@ -46,23 +45,15 @@ const getModels = () => {
     // two chopsticks side by side though
     chopstick = scale([2,1,1], chopstick); 
 
-    var shapes = [chopstick,
+    return { shapes: [chopstick,
         knife,
         mirrorX(knife),
         bigfork,
         mirrorY(fork),
         spoon,
         mirrorY(spoon)
-    ];
-
-    return shapes;     
+    ], layoutOptions: { separation: 2, alignY : ['min','min','min','min',40,20,30] 
+    }};
 }
 
-const layoutOptions = { separation: 2, alignY : ['min','min','min','min',40,20,30]};
-
-const main = (params) => {
-    var shapes = layout(layoutOptions, getModels()); 
-    return shapes; 
-}
-
-module.exports = { getModels, main, layoutOptions }
+module.exports = { getShapesAndLayout }
