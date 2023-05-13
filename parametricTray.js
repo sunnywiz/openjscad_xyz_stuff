@@ -2,7 +2,7 @@
 // Upload parent folder to https://openjscad.xyz
 
 const jscad = require('@jscad/modeling')
-const { cuboid, cylinder } = jscad.primitives
+const { cuboid, cylinder, roundedCuboid } = jscad.primitives
 const { translate, rotate, align, scaleZ} = jscad.transforms
 const { expand} = jscad.expansions
 const { colorize } = jscad.colors
@@ -148,12 +148,15 @@ const main = (params) => {
     }
 
     if (params.choice =='traywithcutout') {
-        // grabber
-        var grab = cylinder({ radius: height - bottom, height: width + rim * 2, segments: 128 });
-        grab = rotate([0, TAU / 4, 0], grab)
+        // hand shaped cutter - 3 fingers is 50mm
+        var grab = 
+        roundedCuboid({ 
+            size: [width+roundness*2, 50+roundness*2, roundness*2+height-bottom], 
+            roundRadius: roundness, 
+            segments: 32 });
         grab = align({
             modes:['min','min','min'],
-            relativeTo: [bb[0][0] - rim, bb[0][1] - rim, bb[0][2] - bottom]
+            relativeTo: [bb[0][0] - rim - roundness, bb[0][1] - rim - roundness, bb[0][2] - bottom]
         },grab)
         grab = translate([0, params.grabY, bottom], grab);
     
