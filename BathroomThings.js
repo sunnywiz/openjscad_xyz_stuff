@@ -31,8 +31,11 @@ const getShapesAndLayout = (params) => {
     var deodorant = hull([c1, c2, c1b]);
 
     return { 
-        shapes: [toothpaste, flonase, deodorant], 
-        layoutOptions: {}    
+        shapes: [deodorant, flonase, toothpaste], 
+        layoutOptions: {
+            separation: 5, 
+            alignY: ['center','center','center']
+        }    
     }
 }
 
